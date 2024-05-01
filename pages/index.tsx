@@ -92,7 +92,7 @@ const Home: NextPage = ({ images }: { images: ImageProps[] }) => {
         <meta name="twitter:image" content="/images/og-image.png" />
       </Head>
       <main className="flex flex-col items-center justify-center mx-auto max-w-[1960px] p-4">
-        <audio ref={audioRef} src="/audio/audio.mp3" autoPlay muted loop style={{ display: 'none' }}>
+         <audio ref={audioRef} src="/audio/audio.mp3" autoPlay  loop style={{ display: 'none' }}>
           Your browser does not support the audio tag.
         </audio>
         <button onClick={scrollToBottom} className=" rounded-lg mb-4 p-2 text-sm text-white bg-blue-500 hover:bg-blue-700">

@@ -55,7 +55,7 @@ const Home: NextPage = ({ images }: { images: ImageProps[] }) => {
     const bottomPosition = bottomRef.current.offsetTop + bottomRef.current.clientHeight;
     const startPosition = window.pageYOffset;
     const distance = bottomPosition - startPosition;
-    const duration = 24000; // Example duration in milliseconds
+    const duration = 96000; // Example duration in milliseconds
   
     let startTime = null;
   
@@ -113,7 +113,7 @@ const Home: NextPage = ({ images }: { images: ImageProps[] }) => {
         <footer  ref={bottomRef} className="p-6 text-center text-white/80 sm:p-12">
         <div>
           <button onClick={toggleAnnouncement} className="text-lg font-bold bg-blue-500 text-white rounded-lg px-4 py-2 hover:bg-blue-600 transition duration-300">
-            Are you ready? Click here for the big news!
+            Are you ready ??
           </button>
           {showAnnouncement && (
             <div ref={announcementRef} className="mt-5 p-5 bg-white  text-black rounded-lg shadow-lg">

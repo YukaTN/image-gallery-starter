@@ -3,172 +3,155 @@ import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useRef } from "react";
-import Bridge from "../components/Icons/Bridge";
-import Logo from "../components/Icons/Logo";
-import Modal from "../components/Modal";
-import cloudinary from "../utils/cloudinary";
-import getBase64ImageUrl from "../utils/generateBlurPlaceholder";
-import type { ImageProps } from "../utils/types";
+import { useEffect, useRef,useState } from "react";
 import { useLastViewedPhoto } from "../utils/useLastViewedPhoto";
+import fs from 'fs';
+import path from 'path';
+
+export interface ImageProps {
+  id: number;
+  src: string;   // URL of the image
+  alt: string;   // Alt text for the image
+  format?: string; // Optional: format of the image
+  width?: number; // Optional: width for use in styling or attributes
+  height?: number; // Optional: height for use in styling or attributes
+}
+
 
 const Home: NextPage = ({ images }: { images: ImageProps[] }) => {
   const router = useRouter();
   const { photoId } = router.query;
   const [lastViewedPhoto, setLastViewedPhoto] = useLastViewedPhoto();
+  const bottomRef = useRef<HTMLDivElement>(null);  // Define the ref here
 
-  const lastViewedPhotoRef = useRef<HTMLAnchorElement>(null);
+  const lastViewedPhotoRef = useRef<HTMLDivElement>(null);
+  const announcementRef = useRef<HTMLDivElement>(null); // Ref for the announcement box
 
+  const [showAnnouncement, setShowAnnouncement] = useState(false);
+
+  // Function to toggle the special announcement visibility
+  const toggleAnnouncement = () => {
+    setShowAnnouncement(!showAnnouncement);
+  };
   useEffect(() => {
-    // This effect keeps track of the last viewed photo in the modal to keep the index page in sync when the user navigates back
     if (lastViewedPhoto && !photoId) {
-      lastViewedPhotoRef.current.scrollIntoView({ block: "center" });
+      lastViewedPhotoRef.current?.scrollIntoView({ block: "center" });
       setLastViewedPhoto(null);
     }
-  }, [photoId, lastViewedPhoto, setLastViewedPhoto]);
+    if (showAnnouncement) {
+      // Scroll to the announcement when it's shown
+      announcementRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [photoId, lastViewedPhoto, setLastViewedPhoto,showAnnouncement]);
+
+
+
+  const scrollToBottom = () => {
+    if (!bottomRef.current) {
+      console.log("Bottom ref is not set");
+      return; // Exit if ref is not set
+    }
+  
+    const bottomPosition = bottomRef.current.offsetTop + bottomRef.current.clientHeight;
+    const startPosition = window.pageYOffset;
+    const distance = bottomPosition - startPosition;
+    const duration = 24000; // Example duration in milliseconds
+  
+    let startTime = null;
+  
+    const animateScroll = (currentTime) => {
+      if (!startTime) startTime = currentTime;
+      const timeElapsed = currentTime - startTime;
+      const nextScroll = linearTween(timeElapsed, startPosition, distance, duration);
+  
+      window.scrollTo(0, nextScroll);
+  
+      if (timeElapsed < duration) {
+        requestAnimationFrame(animateScroll);
+      }
+    };
+  
+    requestAnimationFrame(animateScroll);
+  };
+  
+  function linearTween(t, b, c, d) {
+    return c * t / d + b;
+}
+  
+  
 
   return (
     <>
       <Head>
-        <title>Next.js Conf 2022 Photos</title>
-        <meta
-          property="og:image"
-          content="https://nextjsconf-pics.vercel.app/og-image.png"
-        />
-        <meta
-          name="twitter:image"
-          content="https://nextjsconf-pics.vercel.app/og-image.png"
-        />
+        <title>big news !!</title>
+        <meta property="og:image" content="/images/og-image.png" />
+        <meta name="twitter:image" content="/images/og-image.png" />
       </Head>
-      <main className="mx-auto max-w-[1960px] p-4">
-        {photoId && (
-          <Modal
-            images={images}
-            onClose={() => {
-              setLastViewedPhoto(photoId);
-            }}
-          />
-        )}
-        <div className="columns-1 gap-4 sm:columns-2 xl:columns-3 2xl:columns-4">
-          <div className="after:content relative mb-5 flex h-[629px] flex-col items-center justify-end gap-4 overflow-hidden rounded-lg bg-white/10 px-6 pb-16 pt-64 text-center text-white shadow-highlight after:pointer-events-none after:absolute after:inset-0 after:rounded-lg after:shadow-highlight lg:pt-0">
-            <div className="absolute inset-0 flex items-center justify-center opacity-20">
-              <span className="flex max-h-full max-w-full items-center justify-center">
-                <Bridge />
-              </span>
-              <span className="absolute left-0 right-0 bottom-0 h-[400px] bg-gradient-to-b from-black/0 via-black to-black"></span>
-            </div>
-            <Logo />
-            <h1 className="mt-8 mb-4 text-base font-bold uppercase tracking-widest">
-              2022 Event Photos
-            </h1>
-            <p className="max-w-[40ch] text-white/75 sm:max-w-[32ch]">
-              Our incredible Next.js community got together in San Francisco for
-              our first ever in-person conference!
-            </p>
-            <a
-              className="pointer z-10 mt-6 rounded-lg border border-white bg-white px-3 py-2 text-sm font-semibold text-black transition hover:bg-white/10 hover:text-white md:mt-4"
-              href="https://vercel.com/new/clone?repository-url=https://github.com/vercel/next.js/tree/canary/examples/with-cloudinary&project-name=nextjs-image-gallery&repository-name=with-cloudinary&env=NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,CLOUDINARY_API_KEY,CLOUDINARY_API_SECRET,CLOUDINARY_FOLDER&envDescription=API%20Keys%20from%20Cloudinary%20needed%20to%20run%20this%20application"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Clone and Deploy
-            </a>
-          </div>
-          {images.map(({ id, public_id, format, blurDataUrl }) => (
-            <Link
-              key={id}
-              href={`/?photoId=${id}`}
-              as={`/p/${id}`}
-              ref={id === Number(lastViewedPhoto) ? lastViewedPhotoRef : null}
-              shallow
-              className="after:content group relative mb-5 block w-full cursor-zoom-in after:pointer-events-none after:absolute after:inset-0 after:rounded-lg after:shadow-highlight"
-            >
-              <Image
-                alt="Next.js Conf photo"
-                className="transform rounded-lg brightness-90 transition will-change-auto group-hover:brightness-110"
-                style={{ transform: "translate3d(0, 0, 0)" }}
-                placeholder="blur"
-                blurDataURL={blurDataUrl}
-                src={`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/c_scale,w_720/${public_id}.${format}`}
-                width={720}
-                height={480}
-                sizes="(max-width: 640px) 100vw,
-                  (max-width: 1280px) 50vw,
-                  (max-width: 1536px) 33vw,
-                  25vw"
-              />
+      <main className="flex flex-col items-center justify-center mx-auto max-w-[1960px] p-4">
+        <button onClick={scrollToBottom} className=" rounded-lg mb-4 p-2 text-sm text-white bg-blue-500 hover:bg-blue-700">
+          Click here !! I will guide you to the big news !!!
+        </button>
+      <div className="columns-1 gap-4 sm:columns-2 xl:columns-3 2xl:columns-4">
+       
+
+          {images.map(({ id, src, alt }) => (
+            <Link key={id} href={`/?photoId=${id}`} as={`/p/${id}`} shallow>
+              <div className="block w-full cursor-zoom-in" ref={id === Number(lastViewedPhoto) ? lastViewedPhotoRef : null}>
+                <Image
+                  alt={alt}
+                  className="transform rounded-lg brightness-90 transition will-change-auto group-hover:brightness-110"
+                  src={src}
+                  layout="responsive"
+                  width={720}
+                  height={480}
+                />
+              </div>
             </Link>
           ))}
         </div>
-      </main>
-      <footer className="p-6 text-center text-white/80 sm:p-12">
-        Thank you to{" "}
-        <a
-          href="https://edelsonphotography.com/"
-          target="_blank"
-          className="font-semibold hover:text-white"
-          rel="noreferrer"
-        >
-          Josh Edelson
-        </a>
-        ,{" "}
-        <a
-          href="https://www.newrevmedia.com/"
-          target="_blank"
-          className="font-semibold hover:text-white"
-          rel="noreferrer"
-        >
-          Jenny Morgan
-        </a>
-        , and{" "}
-        <a
-          href="https://www.garysextonphotography.com/"
-          target="_blank"
-          className="font-semibold hover:text-white"
-          rel="noreferrer"
-        >
-          Gary Sexton
-        </a>{" "}
-        for the pictures.
+
+        <footer  ref={bottomRef} className="p-6 text-center text-white/80 sm:p-12">
+        <div>
+          <button onClick={toggleAnnouncement} className="text-lg font-bold bg-blue-500 text-white rounded-lg px-4 py-2 hover:bg-blue-600 transition duration-300">
+            Are you ready? Click here for the big news!
+          </button>
+          {showAnnouncement && (
+            <div ref={announcementRef} className="mt-5 p-5 bg-white  text-black rounded-lg shadow-lg">
+              <h2 className="text-2xl font-bold">Big News!</h2>
+              <p>After going through all these memories you have with mom and dad, I chose you as Best Antie and Best Uncle ! <br/>
+                I will be coming sooner then you think, I hope you wont disappoint me and my choice, I expect lots of 97ab and Chrab <br/>
+                Sincerely, Baby Bedoui
+              </p>
+            </div>
+          )}
+        </div>
       </footer>
+      </main>
     </>
   );
 };
 
 export default Home;
 
+
+
 export async function getStaticProps() {
-  const results = await cloudinary.v2.search
-    .expression(`folder:${process.env.CLOUDINARY_FOLDER}/*`)
-    .sort_by("public_id", "desc")
-    .max_results(400)
-    .execute();
-  let reducedResults: ImageProps[] = [];
+  const imagesDirectory = path.join(process.cwd(), 'public', 'images');
+  const imageFiles = fs.readdirSync(imagesDirectory);
 
-  let i = 0;
-  for (let result of results.resources) {
-    reducedResults.push({
-      id: i,
-      height: result.height,
-      width: result.width,
-      public_id: result.public_id,
-      format: result.format,
-    });
-    i++;
-  }
-
-  const blurImagePromises = results.resources.map((image: ImageProps) => {
-    return getBase64ImageUrl(image);
+  const images = imageFiles.map((filename, index) => {
+    const [name, format] = filename.split('.');
+    return {
+      id: index,
+      src: `/images/${filename}`,
+      alt: `Description for ${name}`, // Provide meaningful alt text
+      format,
+    };
   });
-  const imagesWithBlurDataUrls = await Promise.all(blurImagePromises);
-
-  for (let i = 0; i < reducedResults.length; i++) {
-    reducedResults[i].blurDataUrl = imagesWithBlurDataUrls[i];
-  }
 
   return {
     props: {
-      images: reducedResults,
+      images,
     },
   };
 }

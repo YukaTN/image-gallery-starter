@@ -43,14 +43,13 @@ const Home: NextPage = ({ images }: { images: ImageProps[] }) => {
       // Scroll to the announcement when it's shown
       announcementRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
-    if (audioRef.current) {
-      audioRef.current.play().catch(err => console.error('Failed to play:', err));
-    }
+   
   }, [photoId, lastViewedPhoto, setLastViewedPhoto,showAnnouncement]);
 
 
 
   const scrollToBottom = () => {
+    handlePlayAudio();
     if (!bottomRef.current) {
       console.log("Bottom ref is not set");
       return; // Exit if ref is not set
@@ -59,7 +58,7 @@ const Home: NextPage = ({ images }: { images: ImageProps[] }) => {
     const bottomPosition = bottomRef.current.offsetTop + bottomRef.current.clientHeight;
     const startPosition = window.pageYOffset;
     const distance = bottomPosition - startPosition;
-    const duration = 96000; // Example duration in milliseconds
+    const duration = 120000; // Example duration in milliseconds
   
     let startTime = null;
   
@@ -82,7 +81,13 @@ const Home: NextPage = ({ images }: { images: ImageProps[] }) => {
     return c * t / d + b;
 }
   
-  
+const handlePlayAudio = () => {
+  if (audioRef.current) {
+    audioRef.current.play()
+      .then(() => console.log("Audio playing"))
+      .catch(err => console.error("Error trying to play audio:", err));
+  }
+};
 
   return (
     <>
@@ -92,7 +97,7 @@ const Home: NextPage = ({ images }: { images: ImageProps[] }) => {
         <meta name="twitter:image" content="/images/og-image.png" />
       </Head>
       <main className="flex flex-col items-center justify-center mx-auto max-w-[1960px] p-4">
-         <audio ref={audioRef} src="/audio/audio.mp3" autoPlay  loop style={{ display: 'none' }}>
+         <audio ref={audioRef} src="/audio/audio.mp3"   loop style={{ display: 'none' }}>
           Your browser does not support the audio tag.
         </audio>
         <button onClick={scrollToBottom} className=" rounded-lg mb-4 p-2 text-sm text-white bg-blue-500 hover:bg-blue-700">
